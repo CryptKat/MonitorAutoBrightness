@@ -7,13 +7,17 @@ Required hardware:
 - Photoresistor
 
 Required software:
-- [Twinkle tray](https://github.com/xanderfrangos/twinkle-tray)
+- .NET Framework 4.6.1+
+- [Twinkle Tray](https://github.com/xanderfrangos/twinkle-tray)
 - [libusb-win32 driver](https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/)
 
 ### Setup
 - Install required software
 - Connect photoresitor to ATTiny85's **P2** and **GND**
 - Upload **LightSensor.ino** firmware to your ATTiny85
+  - Board: Digispark
+  - Clock: 16.5 MHz - for V-USB
+  - Micronucleus variant: Recommended
 - Create BrightnessLevels.txt beside MonitorAutoBrightness.exe.
 Fill with key-value pairs (key = sensor value, value = brightness level).
 
