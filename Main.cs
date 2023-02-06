@@ -14,6 +14,10 @@ namespace MonitorAutoBrightness
 {
     public partial class Main : Form
     {
+        private const int TIMER_PERIOD = 1000;
+
+        private readonly System.Threading.Timer _timer;
+
         private int _previousValue = int.MinValue;
         private int _previousBrightness = int.MinValue;
         private CancellationTokenSource _cts = null;
@@ -22,10 +26,13 @@ namespace MonitorAutoBrightness
         public Main()
         {
             InitializeComponent();
-            var timer = new System.Timers.Timer();
-            timer.Elapsed += Timer_Elapsed;
-            timer.Interval = 1000;
-            timer.Start();
+
+            var progress = new Progress<Exception>((e) =>
+            {
+                throw e;
+            });
+
+            _timer = new System.Threading.Timer(Timer_Elapsed, progress, 0, TIMER_PERIOD);
         }
 
         private void Main_Load(object sender, EventArgs e)
@@ -68,23 +75,33 @@ namespace MonitorAutoBrightness
             Application.Exit();
         }
 
-        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private void Timer_Elapsed(object state)
         {
-            var timer = (System.Timers.Timer)sender;
-            timer.Enabled = false;
+            _timer.Change(Timeout.Infinite, Timeout.Infinite);
 
-            var sensorValueLabelText = SensorValueLabel.Text;
-            var brightnessValueLabelText = BrightnessValueLabel.Text;
+            var progress = (IProgress<Exception>)state;
 
-            AdjustBrightness(ref sensorValueLabelText, ref brightnessValueLabelText);
-
-            Invoke((Action)(() =>
+            try
             {
-                SensorValueLabel.Text = sensorValueLabelText;
-                BrightnessValueLabel.Text = brightnessValueLabelText;
-            }));
+                var sensorValueLabelText = SensorValueLabel.Text;
+                var brightnessValueLabelText = BrightnessValueLabel.Text;
 
-            timer.Enabled = true;
+                AdjustBrightness(ref sensorValueLabelText, ref brightnessValueLabelText);
+
+                Invoke((Action)(() =>
+                {
+                    SensorValueLabel.Text = sensorValueLabelText;
+                    BrightnessValueLabel.Text = brightnessValueLabelText;
+                }));
+            }
+            catch (Exception exception)
+            {
+                progress.Report(exception);
+            }
+            finally
+            {
+                _timer.Change(TIMER_PERIOD, TIMER_PERIOD);
+            }
         }
 
         private void AdjustBrightness(ref string sensorValueLabelText, ref string brightnessValueLabelText)
@@ -154,7 +171,7 @@ namespace MonitorAutoBrightness
 
                 var minimalTimeSpan = Convert.ToDouble(ConfigurationManager.AppSettings["MinimalTimeSpanBetweenAdjustments"]);
                 if ((DateTime.Now - _lastModified).TotalSeconds < minimalTimeSpan)
-                    return;   
+                    return;
 
                 var previousBrightness = _previousBrightness;
 
@@ -208,8 +225,10 @@ namespace MonitorAutoBrightness
                 dict.Add(lineSensorValue, lineBrightnessLevel);
             }
 
-            dict.Add(0, 0);
-            dict.Add(1024, 100);
+            if (!dict.ContainsKey(0))
+                dict.Add(0, 0);
+            if (!dict.ContainsKey(1024))
+                dict.Add(1024, 100);
 
             int value;
             var index = Array.BinarySearch(dict.Keys.ToArray(), sensorValue);
