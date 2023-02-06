@@ -39,7 +39,14 @@ namespace MonitorAutoBrightness
 
         private void AdjustBrightness(ref string sensorValueLabelText, ref string brightnessValueLabelText)
         {
-            using (var digiSpark = new ArduinoUsbDevice())
+            int? devicePort = null;
+            var portString = ConfigurationManager.AppSettings["SensorUsbPort"];
+            if (portString != null)
+                devicePort = Convert.ToInt32(portString);
+            if (devicePort == 0)
+                devicePort = null;
+
+            using (var digiSpark = new ArduinoUsbDevice(0x16c0, 0x05df, devicePort))
             {
                 if (!digiSpark.IsAvailable)
                 {
