@@ -6,13 +6,16 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MonitorAutoBrightness
 {
     public partial class Main : Form
     {
-        private int previousValue = 0;
+        private int _previousValue = int.MinValue;
+        private int _previousBrightness = int.MinValue;
+        private CancellationTokenSource _cts = null;
 
         public Main()
         {
@@ -106,28 +109,33 @@ namespace MonitorAutoBrightness
                     buffer.Add(value);
 
                 var bufferAsString = System.Text.Encoding.ASCII.GetString(buffer.ToArray());
-                var match = Regex.Match(bufferAsString, @".+\r\n(\d+)\r\n");
+                var match = Regex.Match(bufferAsString, @".*\r\n(\d+)\r\n");
                 if (!match.Success)
                 {
-                    sensorValueLabelText = "Value not found";
+                    sensorValueLabelText = "Not found";
                     brightnessValueLabelText = "-";
                     return;
                 }
 
                 var newValue = Convert.ToInt32(match.Groups[1].Value);
-                if (newValue == previousValue)
-                    return;
-
-                previousValue = newValue;
                 bool isValueWrong = newValue < 0 || newValue >= 1023;
                 if (isValueWrong)
                 {
-                    sensorValueLabelText = "Wrong value";
+                    sensorValueLabelText = "Wrong";
                     brightnessValueLabelText = "-";
                     return;
                 }
 
                 newValue = 1023 - newValue;
+                if (newValue == _previousValue)
+                {
+                    sensorValueLabelText = _previousValue.ToString();
+                    brightnessValueLabelText = _previousBrightness.ToString();
+                    return;
+                }
+
+                _previousValue = newValue;
+
                 sensorValueLabelText = newValue.ToString();
 
                 int brightness = GetBrightnessLevel(newValue);
@@ -138,14 +146,37 @@ namespace MonitorAutoBrightness
                 }
 
                 brightnessValueLabelText = brightness.ToString();
-                var appPath = ConfigurationManager.AppSettings["BrightnessManagerAppExecutablePath"];
-                var appArgs = ConfigurationManager.AppSettings["BrightnessManagerAppArgs"];
 
-                using (Process.Start(new ProcessStartInfo
+                if (brightness == _previousBrightness)
+                    return;
+
+                var previousBrightness = _previousBrightness;
+
+                _cts?.Cancel();
+
+                _cts = new CancellationTokenSource();
+                _ = Task.Run(async () =>
                 {
-                    FileName = Environment.ExpandEnvironmentVariables(appPath),
-                    Arguments = string.Format(appArgs, brightness)
-                })) { }
+                    if (previousBrightness != int.MinValue)
+                    { 
+                        var step = 1;
+                        var incrementor = brightness > previousBrightness ? step : -step;
+                        for (int i = previousBrightness + incrementor; i != brightness; i += incrementor)
+                        {
+                            if (_cts.IsCancellationRequested)
+                                break;
+
+                            SetBrightnessLevel(i);
+                            await Task.Delay(200, _cts.Token);
+                        }
+                    }
+
+                    if (!_cts.IsCancellationRequested)
+                        SetBrightnessLevel(brightness);
+
+                }, _cts.Token);
+
+                _previousBrightness = brightness;
             }
         }
 
@@ -174,6 +205,18 @@ namespace MonitorAutoBrightness
             }
 
             return int.MinValue;
+        }
+
+        private void SetBrightnessLevel(int brightnessLevel)
+        {
+            var appPath = ConfigurationManager.AppSettings["BrightnessManagerAppExecutablePath"];
+            var appArgs = ConfigurationManager.AppSettings["BrightnessManagerAppArgs"];
+
+            using (Process.Start(new ProcessStartInfo
+            {
+                FileName = Environment.ExpandEnvironmentVariables(appPath),
+                Arguments = string.Format(appArgs, brightnessLevel)
+            })) { }
         }
     }
 }
