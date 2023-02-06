@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -158,7 +159,7 @@ namespace MonitorAutoBrightness
                 _ = Task.Run(async () =>
                 {
                     if (previousBrightness != int.MinValue)
-                    { 
+                    {
                         var step = 1;
                         var incrementor = brightness > previousBrightness ? step : -step;
                         for (int i = previousBrightness + incrementor; i != brightness; i += incrementor)
@@ -187,24 +188,36 @@ namespace MonitorAutoBrightness
             if (!File.Exists(levelsFilePath))
                 return int.MinValue;
 
+            var dict = new SortedDictionary<int, int>();
+
             var fileLines = File.ReadAllLines(levelsFilePath);
             foreach (var line in fileLines)
             {
                 var lineParts = line.Split(new[] { ' ', '\t' });
                 if (lineParts.Length < 2)
                     continue;
-                try
-                {
-                    var lineSensorValue = Convert.ToInt32(lineParts[0]);
-                    var lineBrightnessLevel = Convert.ToInt32(lineParts[1]);
 
-                    if (sensorValue <= lineSensorValue)
-                        return lineBrightnessLevel;
-                }
-                catch (FormatException) { }
+                var lineSensorValue = Convert.ToInt32(lineParts[0]);
+                var lineBrightnessLevel = Convert.ToInt32(lineParts[1]);
+                dict.Add(lineSensorValue, lineBrightnessLevel);
             }
 
-            return int.MinValue;
+            dict.Add(0, 0);
+            dict.Add(1024, 100);
+
+            int value;
+            var index = Array.BinarySearch(dict.Keys.ToArray(), sensorValue);
+            if (index >= 0)
+                value = dict.ElementAt(index).Value;
+            else
+            {
+                index = -index - 1;
+                var point1 = new Point(dict.ElementAt(index - 1).Key, dict.ElementAt(index - 1).Value);
+                var point2 = new Point(dict.ElementAt(index).Key, dict.ElementAt(index).Value);
+                value = (int)GetY(point1, point2, sensorValue);
+            }
+
+            return value;
         }
 
         private void SetBrightnessLevel(int brightnessLevel)
@@ -217,6 +230,13 @@ namespace MonitorAutoBrightness
                 FileName = Environment.ExpandEnvironmentVariables(appPath),
                 Arguments = string.Format(appArgs, brightnessLevel)
             })) { }
+        }
+
+        public static float GetY(Point point1, Point point2, float x)
+        {
+            var m = (float)(point2.Y - point1.Y) / (point2.X - point1.X);
+            var b = point1.Y - (m * point1.X);
+            return m * x + b;
         }
     }
 }
