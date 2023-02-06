@@ -21,8 +21,10 @@ Required software:
 
 ### Application setup
 - Install required software
-- Adjust settings inside App.config, if necessary
-- Create BrightnessLevels.txt beside MonitorAutoBrightness.exe.
+- Add **MonitorAutoBrightness.exe --Minimized** shortcut to Autorun (shell:startup)
+- Adjust settings inside MonitorAutoBrightness.exe.config, if necessary
+- Adjust BrightnessLevels.txt (supports "hot reloading")
+
 Fill with key-value pairs (key = sensor value, value = brightness level).
 
 Example:
@@ -40,4 +42,3 @@ Example:
 1000 80
 9999 100
 ```
-- Add **MonitorAutoBrightness.exe --Minimized** shortcut to Autorun (shell:startup)
