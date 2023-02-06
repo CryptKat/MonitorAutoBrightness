@@ -5,6 +5,8 @@ Software for auto-adjusting screen brightness.
 Required hardware:
 - Digispark ATTiny85
 - Photoresistor
+<img src="Digispark.png" width="240px">
+
 
 Required software:
 - .NET Framework 4.6.1+
