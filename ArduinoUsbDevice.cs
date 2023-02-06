@@ -3,6 +3,7 @@ using LibUsbDotNet.DeviceNotify;
 using LibUsbDotNet.Main;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -31,7 +32,7 @@ namespace MonitorAutoBrightness
             _portNumber = portNumber;
 
             // As this instance's life is very short (in this project), we dont need notifier.
-            //_usbDeviceNotifier = DeviceNotifier.OpenDeviceNotifier();
+            _usbDeviceNotifier = DeviceNotifier.OpenDeviceNotifier();
             //_usbDeviceNotifier.OnDeviceNotify += OnDeviceNotifyEvent;
 
             ConnectUsbDevice();
@@ -44,7 +45,7 @@ namespace MonitorAutoBrightness
             _usbDevice = null;
 
             var devices = UsbDevice.AllDevices;
-            foreach(UsbRegistry usbRegistry in devices)
+            foreach(UsbRegistry usbRegistry in devices.Cast<UsbRegistry>())
             {
                 var found = usbRegistry.Vid == _vendorId && usbRegistry.Pid == _productId;
                 if (_portNumber != null)
@@ -61,8 +62,7 @@ namespace MonitorAutoBrightness
             {
                 IsAvailable = true;
 
-                if (ArduinoUsbDeviceChangeNotifier != null)
-                    ArduinoUsbDeviceChangeNotifier.Invoke(true, null);
+                ArduinoUsbDeviceChangeNotifier?.Invoke(true, null);
             }
             else
             {
@@ -84,8 +84,7 @@ namespace MonitorAutoBrightness
                     _usbDevice = null;
                     IsAvailable = false;
 
-                    if (ArduinoUsbDeviceChangeNotifier != null)
-                        ArduinoUsbDeviceChangeNotifier.Invoke(false, null);
+                    ArduinoUsbDeviceChangeNotifier?.Invoke(false, null);
                 }
             }
         }
