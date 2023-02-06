@@ -25,6 +25,9 @@ namespace MonitorAutoBrightness
 
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
+            var timer = (System.Timers.Timer)sender;
+            timer.Enabled = false;
+
             var sensorValueLabelText = SensorValueLabel.Text;
             var brightnessValueLabelText = BrightnessValueLabel.Text;
 
@@ -35,6 +38,8 @@ namespace MonitorAutoBrightness
                 SensorValueLabel.Text = sensorValueLabelText;
                 BrightnessValueLabel.Text = brightnessValueLabelText;
             }));
+
+            timer.Enabled = true;
         }
 
         private void AdjustBrightness(ref string sensorValueLabelText, ref string brightnessValueLabelText)
