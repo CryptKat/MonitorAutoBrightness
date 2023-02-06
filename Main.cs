@@ -17,6 +17,7 @@ namespace MonitorAutoBrightness
         private int _previousValue = int.MinValue;
         private int _previousBrightness = int.MinValue;
         private CancellationTokenSource _cts = null;
+        private DateTime _lastModified = DateTime.MinValue;
 
         public Main()
         {
@@ -146,10 +147,14 @@ namespace MonitorAutoBrightness
                     return;
                 }
 
-                brightnessValueLabelText = brightness.ToString();
-
                 if (brightness == _previousBrightness)
                     return;
+
+                brightnessValueLabelText = brightness.ToString();
+
+                var minimalTimeSpan = Convert.ToDouble(ConfigurationManager.AppSettings["MinimalTimeSpanBetweenAdjustments"]);
+                if ((DateTime.Now - _lastModified).TotalSeconds < minimalTimeSpan)
+                    return;   
 
                 var previousBrightness = _previousBrightness;
 
@@ -168,7 +173,7 @@ namespace MonitorAutoBrightness
                                 break;
 
                             SetBrightnessLevel(i);
-                            await Task.Delay(200, _cts.Token);
+                            await Task.Delay(1000, _cts.Token);
                         }
                     }
 
@@ -178,6 +183,7 @@ namespace MonitorAutoBrightness
                 }, _cts.Token);
 
                 _previousBrightness = brightness;
+                _lastModified = DateTime.Now;
             }
         }
 
