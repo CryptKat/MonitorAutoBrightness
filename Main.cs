@@ -23,6 +23,46 @@ namespace MonitorAutoBrightness
             timer.Start();
         }
 
+        private void Main_Load(object sender, EventArgs e)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1 && args[1] == "--Minimized")
+            {
+                WindowState = FormWindowState.Minimized;
+                ShowInTaskbar = false;
+            }
+        }
+
+        private void Main_Resize(object sender, EventArgs e)
+        {
+            if (WindowState == FormWindowState.Minimized)
+                ShowInTaskbar = false;
+        }
+
+        private void Main_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                WindowState = FormWindowState.Minimized;
+            }
+        }
+
+        private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Show();
+                WindowState = FormWindowState.Normal;
+                ShowInTaskbar = true;
+            }
+        }
+
+        private void CloseAppMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             var timer = (System.Timers.Timer)sender;
