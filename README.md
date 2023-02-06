@@ -18,6 +18,7 @@ Required software:
   - Board: Digispark
   - Clock: 16.5 MHz - for V-USB
   - Micronucleus variant: Recommended
+- Adjust settings inside App.config, if necessary
 - Create BrightnessLevels.txt beside MonitorAutoBrightness.exe.
 Fill with key-value pairs (key = sensor value, value = brightness level).
 
