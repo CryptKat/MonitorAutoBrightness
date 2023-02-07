@@ -87,7 +87,7 @@ namespace MonitorAutoBrightness
 
                 AdjustBrightness(ref sensorValueLabelText, ref brightnessValueLabelText);
 
-                Invoke((Action)(() =>
+                BeginInvoke((Action)(() =>
                 {
                     SensorValueLabel.Text = sensorValueLabelText;
                     BrightnessValueLabel.Text = brightnessValueLabelText;

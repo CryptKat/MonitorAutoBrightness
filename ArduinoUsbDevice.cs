@@ -14,12 +14,11 @@ namespace MonitorAutoBrightness
         private readonly int _productId;
         private readonly int _vendorId;
         private readonly int? _portNumber;
-        private readonly IDeviceNotifier _usbDeviceNotifier;
 
         private UsbDevice _usbDevice;
 
         public bool IsAvailable { get; private set; }
-        
+
         public ArduinoUsbDevice()
             : this(0x16c0, 0x05df) // Default values for the DigiSpark
         {
@@ -31,21 +30,15 @@ namespace MonitorAutoBrightness
             _productId = productId;
             _portNumber = portNumber;
 
-            // As this instance's life is very short (in this project), we dont need notifier.
-            _usbDeviceNotifier = DeviceNotifier.OpenDeviceNotifier();
-            //_usbDeviceNotifier.OnDeviceNotify += OnDeviceNotifyEvent;
-
             ConnectUsbDevice();
         }
-
-        public event EventHandler<EventArgs> ArduinoUsbDeviceChangeNotifier;
 
         private void ConnectUsbDevice()
         {
             _usbDevice = null;
 
             var devices = UsbDevice.AllDevices;
-            foreach(UsbRegistry usbRegistry in devices.Cast<UsbRegistry>())
+            foreach (UsbRegistry usbRegistry in devices.Cast<UsbRegistry>())
             {
                 var found = usbRegistry.Vid == _vendorId && usbRegistry.Pid == _productId;
                 if (_portNumber != null)
@@ -58,35 +51,7 @@ namespace MonitorAutoBrightness
                 }
             }
 
-            if (_usbDevice != null)
-            {
-                IsAvailable = true;
-
-                ArduinoUsbDeviceChangeNotifier?.Invoke(true, null);
-            }
-            else
-            {
-                IsAvailable = false;
-            }
-        }
-
-        private void OnDeviceNotifyEvent(object sender, DeviceNotifyEventArgs e)
-        {
-            if (e.Device.IdVendor == _vendorId && e.Device.IdProduct == _productId)
-            {
-                if (e.EventType == EventType.DeviceArrival)
-                {
-                    ConnectUsbDevice();
-                }
-
-                else if (e.EventType == EventType.DeviceRemoveComplete)
-                {
-                    _usbDevice = null;
-                    IsAvailable = false;
-
-                    ArduinoUsbDeviceChangeNotifier?.Invoke(false, null);
-                }
-            }
+            IsAvailable = _usbDevice != null;
         }
 
         public string GetStringDescriptor(byte index)
@@ -188,9 +153,9 @@ namespace MonitorAutoBrightness
 
         public void Dispose()
         {
-            if (!_disposed && _usbDeviceNotifier != null)
+            if (!_disposed)
             {
-                _usbDeviceNotifier.OnDeviceNotify -= OnDeviceNotifyEvent;
+                _usbDevice?.Close();
             }
 
             _disposed = true;
