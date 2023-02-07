@@ -18,7 +18,6 @@ namespace MonitorAutoBrightness
 
         private readonly System.Threading.Timer _timer;
 
-        private int _previousValue = int.MinValue;
         private int _previousBrightness = int.MinValue;
         private CancellationTokenSource _cts = null;
         private DateTime _lastModified = DateTime.MinValue;
@@ -146,15 +145,6 @@ namespace MonitorAutoBrightness
                 }
 
                 newValue = 1023 - newValue;
-                if (newValue == _previousValue)
-                {
-                    sensorValueLabelText = _previousValue.ToString();
-                    brightnessValueLabelText = _previousBrightness.ToString();
-                    return;
-                }
-
-                _previousValue = newValue;
-
                 sensorValueLabelText = newValue.ToString();
 
                 int brightness = GetBrightnessLevel(newValue);
@@ -173,11 +163,13 @@ namespace MonitorAutoBrightness
                 if ((DateTime.Now - _lastModified).TotalSeconds < minimalTimeSpan)
                     return;
 
-                var previousBrightness = _previousBrightness;
-
                 _cts?.Cancel();
-
                 _cts = new CancellationTokenSource();
+
+                var cts = _cts;
+                var previousBrightness = _previousBrightness;
+                _lastModified = DateTime.Now;
+
                 _ = Task.Run(async () =>
                 {
                     if (previousBrightness != int.MinValue)
@@ -186,21 +178,17 @@ namespace MonitorAutoBrightness
                         var incrementor = brightness > previousBrightness ? step : -step;
                         for (int i = previousBrightness + incrementor; i != brightness; i += incrementor)
                         {
-                            if (_cts.IsCancellationRequested)
+                            if (cts.IsCancellationRequested)
                                 break;
 
                             SetBrightnessLevel(i);
-                            await Task.Delay(1000, _cts.Token);
+                            await Task.Delay(1000, cts.Token);
                         }
                     }
 
-                    if (!_cts.IsCancellationRequested)
+                    if (!cts.IsCancellationRequested)
                         SetBrightnessLevel(brightness);
-
-                }, _cts.Token);
-
-                _previousBrightness = brightness;
-                _lastModified = DateTime.Now;
+                }, cts.Token);
             }
         }
 
@@ -255,6 +243,8 @@ namespace MonitorAutoBrightness
                 FileName = Environment.ExpandEnvironmentVariables(appPath),
                 Arguments = string.Format(appArgs, brightnessLevel)
             })) { }
+
+            _previousBrightness = brightnessLevel;
         }
 
         public static float GetY(Point point1, Point point2, float x)
