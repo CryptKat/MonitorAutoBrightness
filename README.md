@@ -5,10 +5,12 @@ Software for auto-adjusting screen brightness.
 Required hardware:
 - Digispark ATTiny85
 - Photoresistor
+<img src="Digispark.png" width="240px">
+
 
 Required software:
 - .NET Framework 4.6.1+
-- [Twinkle Tray](https://github.com/xanderfrangos/twinkle-tray)
+- [Twinkle Tray](https://github.com/xanderfrangos/twinkle-tray) -used to change brightness
 - [libusb-win32 driver](https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/)
 
 ### Digispark ATTiny85 setup
@@ -29,8 +31,9 @@ Fill with key-value pairs (key = sensor value, value = brightness level).
 
 Example:
 ```
-930 8
-940 10
+800 0
+900 8
+940 8
 950 12
 960 15
 965 22
@@ -40,5 +43,6 @@ Example:
 985 60
 990 70
 1000 80
-9999 100
+1010 90
+1023 100
 ```
