@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MonitorAutoBrightness"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Vitaliy Ceban"
 #define MyAppURL "https://github.com/CryptKat/MonitorAutoBrightness"
 #define MyAppExeName "MonitorAutoBrightness.exe"

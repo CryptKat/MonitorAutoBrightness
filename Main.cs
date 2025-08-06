@@ -182,7 +182,7 @@ namespace MonitorAutoBrightness
                                 break;
 
                             SetBrightnessLevel(i);
-                            await Task.Delay(200, cts.Token);
+                            await Task.Delay(50, cts.Token);
                         }
                     }
 
